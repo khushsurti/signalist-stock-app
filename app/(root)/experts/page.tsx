@@ -1,5 +1,5 @@
 import { connectToDatabase } from '@/database/mongoose';
-import Expert from '@/database/models/expert.model';
+import Expert from '../../../database/models/expert.model';
 import Link from 'next/link';
 import { 
   Search, 
