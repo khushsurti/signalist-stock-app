@@ -32,7 +32,7 @@ const Home = async () => {
     try {
         await connectToDatabase();
         
-        const ExpertSuggestionModule = await import('@/database/models/expert-suggestion.model').catch(() => null);
+        const ExpertSuggestionModule = await import('@/database/models/expert.model').catch(() => null);
         const ExpertSuggestion = ExpertSuggestionModule?.default;
         
         if (ExpertSuggestion) {

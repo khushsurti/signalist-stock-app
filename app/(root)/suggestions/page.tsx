@@ -1,5 +1,5 @@
 import { connectToDatabase } from '@/database/mongoose';
-import ExpertSuggestion from '@/database/models/expert-suggestion.model';
+import ExpertSuggestion from '@/database/models/expert.model';
 import ExpertSuggestionCard from '@/components/ui/ExpertSuggestionCard';
 import { Search, Filter, TrendingUp, TrendingDown, Target } from 'lucide-react';
 

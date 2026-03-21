@@ -1,7 +1,7 @@
 'use server';
 
 import { connectToDatabase } from '@/database/mongoose';
-import ExpertSuggestion from '@/database/models/expert-suggestion.model';
+import ExpertSuggestion from '@/database/models/expert.model';
 import Expert from '@/database/models/expert.model';
 import { getStocksDetails } from './finnhub.actions';
 

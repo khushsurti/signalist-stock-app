@@ -8,7 +8,7 @@ import { getWallet } from '@/lib/actions/wallet.actions';
 import { auth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
 import { connectToDatabase } from '@/database/mongoose';
-import ExpertSuggestion from '@/database/models/expert-suggestion.model';
+import ExpertSuggestion from '@/database/models/expert.model';
 import ExpertSuggestionCard from '@/components/ui/ExpertSuggestionCard';
 import {
   SYMBOL_INFO_WIDGET_CONFIG,
