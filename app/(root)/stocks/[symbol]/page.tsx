@@ -25,6 +25,8 @@ import {
 } from '@/lib/constants';
 import { notFound } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 // Types
 interface WatchlistItemType {
   symbol: string;

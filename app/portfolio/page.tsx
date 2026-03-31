@@ -7,6 +7,8 @@ import { getStocksDetails } from '@/lib/actions/finnhub.actions';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, Wallet, PieChart, ArrowRight, DollarSign, BarChart3 } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PortfolioPage() {
   const auth = await getAuth();
   const session = await auth.api.getSession({ headers: await headers() });

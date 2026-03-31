@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { getTransactions } from '../../lib/actions/transaction.actions';
 import { ArrowDownCircle, ArrowUpCircle, Clock } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function TransactionsPage() {
   const auth = await getAuth();
   const session = await auth.api.getSession({ headers: await headers() });

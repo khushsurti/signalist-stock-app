@@ -10,6 +10,8 @@ import Link from 'next/link';
 import { ArrowRight, TrendingUp } from 'lucide-react';
 import React from 'react';
 
+export const dynamic = 'force-dynamic';
+
 // Type for suggestions
 interface SuggestionType {
   _id?: string;
