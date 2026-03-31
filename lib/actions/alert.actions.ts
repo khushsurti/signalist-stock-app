@@ -2,7 +2,7 @@
 
 import { connectToDatabase } from '@/database/mongoose';
 import Alert from '@/database/models/alert.model';
-import { auth } from '@/lib/better-auth/auth';
+import { getAuth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { sendEmail } from '@/lib/email/sendEmail';
@@ -16,6 +16,7 @@ export const createAlert = async (
   condition: 'above' | 'below'
 ) => {
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       return { success: false, error: 'Please sign in to create alerts' };
@@ -68,6 +69,7 @@ export const createAlert = async (
 // Get all active alerts
 export const getUserAlerts = async () => {
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) return [];
 
@@ -88,6 +90,7 @@ export const getUserAlerts = async () => {
 // Delete an alert
 export const deleteAlert = async (alertId: string) => {
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) return { success: false, error: 'Unauthorized' };
 

@@ -1,4 +1,4 @@
-import { auth } from '@/lib/better-auth/auth';
+import { getAuth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getPortfolio } from '@/lib/actions/portfolio.actions';
@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { TrendingUp, TrendingDown, Wallet, PieChart, ArrowRight, DollarSign, BarChart3 } from 'lucide-react';
 
 export default async function PortfolioPage() {
+  const auth = await getAuth();
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) redirect('/sign-in');
 

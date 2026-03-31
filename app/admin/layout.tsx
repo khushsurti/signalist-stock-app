@@ -1,4 +1,4 @@
-import { auth } from '@/lib/better-auth/auth';
+import { getAuth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -9,6 +9,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const auth = await getAuth();
   const session = await auth.api.getSession({ headers: await headers() });
   
   console.log('👤 Session User:', session?.user);

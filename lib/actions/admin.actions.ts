@@ -6,7 +6,7 @@ import Transaction from '@/database/models/transaction.model';
 import Portfolio from '@/database/models/portfolio.model';
 import Wallet from '@/database/models/wallet.model';
 import { Watchlist } from '@/database/models/watchlist.model';
-import { auth } from '@/lib/better-auth/auth';
+import { getAuth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
@@ -184,6 +184,7 @@ export const toggleUserBlock = async (userId: string, block: boolean) => {
 export const deleteUser = async (userId: string) => {
   try {
     await connectToDatabase();
+    const auth = await getAuth();
     
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {

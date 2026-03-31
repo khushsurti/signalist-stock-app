@@ -3,7 +3,7 @@
 import { connectToDatabase } from '@/database/mongoose';
 import { Watchlist } from '@/database/models/watchlist.model';
 import { revalidatePath } from 'next/cache';
-import { auth } from '../better-auth/auth';
+import { getAuth } from '../better-auth/auth';
 import { headers } from 'next/headers';
 import { getStocksDetails } from './finnhub.actions';
 
@@ -39,6 +39,7 @@ export async function getWatchlistSymbolsByEmail(email: string): Promise<string[
 // ============================================
 export const addToWatchlist = async (symbol: string, company: string) => {
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -81,6 +82,7 @@ export const addToWatchlist = async (symbol: string, company: string) => {
 // ============================================
 export const removeFromWatchlist = async (symbol: string) => {
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -110,6 +112,7 @@ export const removeFromWatchlist = async (symbol: string) => {
 // ============================================
 export const getUserWatchlist = async () => {
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -147,6 +150,7 @@ export const getUserWatchlist = async () => {
 // ============================================
 export const getWatchlistWithData = async () => {
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({
       headers: await headers(),
     });

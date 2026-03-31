@@ -5,7 +5,7 @@ import { WatchlistItem } from '@/database/models/watchlist.model';
 import { getStocksDetails } from '@/lib/actions/finnhub.actions';
 import { getUserWatchlist } from '@/lib/actions/watchlist.actions';
 import { getWallet } from '@/lib/actions/wallet.actions';
-import { auth } from '@/lib/better-auth/auth';
+import { getAuth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
 import PriceAlert from '@/components/ui/PriceAlert';
 import { connectToDatabase } from '@/database/mongoose';
@@ -50,6 +50,7 @@ interface StockDetailsPageProps {
 export default async function StockDetails({ params }: StockDetailsPageProps) {
   const { symbol } = await params;
   const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
+  const auth = await getAuth();
 
   // Get user session
   const session = await auth.api.getSession({ headers: await headers() });

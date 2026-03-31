@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/better-auth/auth';
+import { getAuth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
 import { connectToDatabase } from '@/database/mongoose';
 import Alert from '@/database/models/alert.model';
 
 export async function POST(request: Request) {
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       return NextResponse.json(
