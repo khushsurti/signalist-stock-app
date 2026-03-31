@@ -6,12 +6,10 @@ import { sellStock } from "@/lib/actions/sellStock";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import RazorpayPayment from "./RazorpayPayment";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog"; // ✅ Add these imports
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 
 interface Props {
   symbol: string;
@@ -21,14 +19,13 @@ interface Props {
   availableBalance?: number;
 }
 
-export default function BuySellButtons({ 
-  symbol, 
-  company = symbol, 
+export default function BuySellButtons({
+  symbol,
+  company = symbol,
   userId = "demo-user",
   currentPrice = 100,
   availableBalance = 60000
 }: Props) {
-  
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState<"buy" | "sell" | null>(null);
@@ -46,9 +43,9 @@ export default function BuySellButtons({
   const handleSell = async () => {
     try {
       setLoading("sell");
-      
+
       const result = await sellStock(userId, symbol, currentPrice, quantity);
-      
+
       if (result.success) {
         toast.success("Order Placed!", {
           description: `Sold ${quantity} shares of ${symbol}`,
@@ -68,8 +65,7 @@ export default function BuySellButtons({
     <>
       <div className="border rounded-lg p-6 space-y-4 bg-white dark:bg-gray-800">
         <h3 className="text-xl font-bold">Trade {symbol}</h3>
-        
-        {/* Quantity Selector */}
+
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium">Quantity:</label>
           <div className="flex items-center gap-2">
@@ -95,19 +91,17 @@ export default function BuySellButtons({
           </div>
         </div>
 
-        {/* Price Info */}
         <div className="text-sm text-gray-600 space-y-1">
           <div className="flex justify-between">
             <span>Price per share:</span>
-            <span className="font-medium">₹{currentPrice.toFixed(2)}</span>
+            <span className="font-medium">INR {currentPrice.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
             <span>Total:</span>
-            <span className="font-medium">₹{(currentPrice * quantity).toFixed(2)}</span>
+            <span className="font-medium">INR {(currentPrice * quantity).toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Buttons */}
         <div className="flex gap-4">
           <button
             onClick={handleBuyClick}
@@ -126,12 +120,11 @@ export default function BuySellButtons({
         </div>
       </div>
 
-      {/* ✅ Payment Modal - Fixed with DialogTitle */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Complete Payment</DialogTitle>  {/* ✅ Title added */}
-          </DialogHeader>
+        <DialogContent
+          showCloseButton={false}
+          className="max-h-[92vh] overflow-y-auto border-none bg-transparent p-0 shadow-none sm:max-w-lg"
+        >
           <RazorpayPayment
             symbol={symbol}
             company={company}

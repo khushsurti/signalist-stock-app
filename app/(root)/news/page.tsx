@@ -1,11 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { Clock, ChevronRight, Newspaper, TrendingUp, TrendingDown, DollarSign, BarChart3, RefreshCw, Bell, X, Globe, TrendingUp as StockUp } from 'lucide-react';
+import { 
+  Clock, ChevronRight, Newspaper, TrendingUp, TrendingDown, 
+  DollarSign, BarChart3, RefreshCw, Bell, X, Globe, 
+  TrendingUp as StockUp, Calendar, User, Share2, Bookmark,
+  ExternalLink, Sparkles, AlertTriangle, CheckCircle, Info,
+  ArrowLeft, Maximize2, Minimize2
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
+
+interface NewsArticle {
+  id?: string;
+  headline: string;
+  summary: string;
+  content?: string;
+  source: string;
+  datetime: string;
+  url: string;
+  category: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+  stockImpact?: string;
+  imageUrl?: string;
+  author?: string;
+  readTime?: number;
+  relatedStocks?: string[];
+}
 
 export default function NewsPage() {
-  const [news, setNews] = useState<any[]>([]);
+  const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [showNotification, setShowNotification] = useState(false);
@@ -17,53 +41,40 @@ export default function NewsPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Set isClient to true after component mounts
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Format date for display - client-side only
   const formatTimeString = (date: Date | null) => {
     if (!date || !isClient) return '--:--:--';
     return date.toLocaleTimeString();
   };
 
-  // Fetch real-time news from our API
   const fetchNews = async (showNotif = false) => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log('Fetching news from API...');
       const response = await fetch('/api/news', {
         cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
+        headers: { 'Cache-Control': 'no-cache' },
       });
       
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const newsData = await response.json();
-      console.log('News data received:', newsData.length);
       
-      // Check if newsData exists and is an array
-      if (!newsData || !Array.isArray(newsData)) {
-        throw new Error('Invalid news data received');
-      }
+      if (!newsData || !Array.isArray(newsData)) throw new Error('Invalid news data');
       
       setNews(newsData);
       
-      // Extract unique categories
       const uniqueCategories = ['all', ...new Set(newsData.map((n: any) => n?.category || 'General').filter(Boolean))];
       setCategories(uniqueCategories);
       
-      // Calculate sentiment stats
       const positive = newsData.filter((n: any) => n?.sentiment === 'positive').length;
       const negative = newsData.filter((n: any) => n?.sentiment === 'negative').length;
       setPositiveNews(positive);
@@ -80,102 +91,108 @@ export default function NewsPage() {
     } catch (error) {
       console.error('Error fetching news:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch news');
-      setNotificationMessage('Failed to fetch latest news. Using sample data.');
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3000);
-      
-      // Load fallback data
       loadFallbackNews();
     } finally {
       setLoading(false);
     }
   };
 
-  // Fallback function to load sample news if API fails
   const loadFallbackNews = () => {
-    const today = new Date();
-    const fallbackNews = [
+    const fallbackNews: NewsArticle[] = [
       {
-        headline: `${today.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}: Market Update - Sensex, Nifty Open Higher`,
-        summary: `Indian benchmark indices opened higher today tracking positive global cues. Nifty above 24,500, Sensex up 300 points.`,
-        source: 'Market Desk',
+        headline: "Fed Signals Rate Cuts, Markets Rally",
+        summary: "Federal Reserve Chair Jerome Powell indicates potential rate cuts in upcoming meetings, sending markets higher.",
+        content: "In a highly anticipated speech, Federal Reserve Chair Jerome Powell signaled that the central bank is prepared to cut interest rates if economic conditions warrant. 'We are closely monitoring the economic data and are prepared to adjust policy as needed,' Powell stated. Markets responded positively with the S&P 500 jumping 1.2% and the Nasdaq climbing 1.5%. Tech stocks led the gains, with NVIDIA and Microsoft hitting new highs. Bond yields fell across the curve, with the 10-year Treasury yield dropping to 4.2%. The dovish comments come amid signs of cooling inflation and a resilient labor market. Analysts now see a 70% chance of a rate cut by September.",
+        source: "Reuters",
         datetime: new Date().toISOString(),
-        url: '#',
-        category: 'Market Opening',
-        sentiment: 'positive',
-        stockImpact: 'NIFTY 50, SENSEX'
+        url: "#",
+        category: "Economy",
+        sentiment: "positive",
+        stockImpact: "NVIDIA, MSFT, AAPL",
+        imageUrl: "/api/placeholder/800/400",
+        author: "Sarah Johnson",
+        readTime: 4,
+        relatedStocks: ["NVDA", "MSFT", "AAPL"]
       },
       {
-        headline: `Tech Stocks Lead Gains as US Fed Signals Rate Cut`,
-        summary: 'IT stocks rally on expectations of rate cuts by September. TCS, Infosys up 2-3%.',
-        source: 'Bloomberg',
+        headline: "Oil Prices Surge on Middle East Tensions",
+        summary: "Crude oil prices jump 3% as geopolitical tensions escalate in the Middle East.",
+        content: "Oil prices surged to their highest level in three months as tensions in the Middle East escalated following attacks on key shipping routes. Brent crude futures rose 3.2% to $87.50 per barrel, while WTI climbed 3.5% to $83.20. The price spike comes as Houthi rebels intensified attacks on commercial vessels in the Red Sea, forcing major shipping companies to reroute. Energy stocks rallied, with Exxon Mobil and Chevron both gaining over 2%. However, airlines and transportation stocks faced pressure on concerns about rising fuel costs. Analysts warn that prolonged disruptions could push oil prices above $90 per barrel.",
+        source: "Bloomberg",
         datetime: new Date().toISOString(),
-        url: '#',
-        category: 'Tech Sector',
-        sentiment: 'positive',
-        stockImpact: 'TCS, INFY, WIPRO'
+        url: "#",
+        category: "Commodities",
+        sentiment: "negative",
+        stockImpact: "RELIANCE, ONGC, BPCL",
+        imageUrl: "/api/placeholder/800/400",
+        author: "Michael Chen",
+        readTime: 3,
+        relatedStocks: ["RELIANCE", "ONGC", "BPCL"]
       },
       {
-        headline: `RBI Keeps Repo Rate Unchanged at 6.5%`,
-        summary: 'Monetary Policy Committee maintains status quo citing inflation concerns. Markets react positively.',
-        source: 'Economic Times',
+        headline: "Tech Earnings Beat Expectations",
+        summary: "Major tech companies report better-than-expected quarterly results, driving sector rally.",
+        content: "The technology sector continues to shine as major players reported impressive quarterly results. Apple exceeded revenue expectations on strong iPhone sales, while Microsoft's cloud business grew 28% year-over-year. Alphabet reported better-than-expected ad revenue, and Amazon's AWS division showed accelerating growth. 'The tech sector is demonstrating resilience despite macroeconomic headwinds,' said analyst Mark Thompson. 'AI adoption is driving significant demand across the ecosystem.' The positive earnings have boosted the Nasdaq Composite, which is up 15% year-to-date. Investors are now looking ahead to upcoming reports from NVIDIA and Meta Platforms.",
+        source: "Financial Times",
         datetime: new Date().toISOString(),
-        url: '#',
-        category: 'Economy',
-        sentiment: 'neutral',
-        stockImpact: 'BANKING, NBFC'
+        url: "#",
+        category: "Tech Sector",
+        sentiment: "positive",
+        stockImpact: "AAPL, MSFT, GOOGL, AMZN",
+        imageUrl: "/api/placeholder/800/400",
+        author: "Emma Watson",
+        readTime: 5,
+        relatedStocks: ["AAPL", "MSFT", "GOOGL", "AMZN"]
       },
       {
-        headline: `Oil Prices Drop to $82/bbl on Weak Demand Forecast`,
-        summary: 'Brent crude falls 2% as OPEC+ signals potential output increase. Reliance, ONGC stocks react.',
-        source: 'Reuters',
+        headline: "RBI Keeps Repo Rate Unchanged",
+        summary: "Reserve Bank of India maintains status quo on interest rates citing inflation concerns.",
+        content: "The Reserve Bank of India's Monetary Policy Committee voted unanimously to keep the repo rate unchanged at 6.5% for the seventh consecutive meeting. Governor Shaktikanta Das highlighted that while growth remains strong, vigilance on inflation is necessary. 'The MPC remains focused on aligning inflation to the 4% target on a durable basis,' Das stated. The decision was widely expected by markets, which showed a muted reaction. Banking stocks edged higher as the policy stance remained supportive. However, real estate and auto stocks faced some selling pressure as hopes for rate cuts were pushed further out.",
+        source: "Economic Times",
         datetime: new Date().toISOString(),
-        url: '#',
-        category: 'Commodities',
-        sentiment: 'negative',
-        stockImpact: 'RELIANCE, ONGC'
+        url: "#",
+        category: "Economy",
+        sentiment: "neutral",
+        stockImpact: "HDFC BANK, ICICI BANK, SBI",
+        imageUrl: "/api/placeholder/800/400",
+        author: "Rajesh Sharma",
+        readTime: 4,
+        relatedStocks: ["HDFCBANK", "ICICIBANK", "SBIN"]
       },
       {
-        headline: `FIIs Invest ₹2,500 Crore in Indian Markets This Week`,
-        summary: 'Foreign institutional investors continue buying streak, boosting market sentiment.',
-        source: 'Financial Express',
+        headline: "EV Sales Hit Record High",
+        summary: "Electric vehicle sales surge 45% in Q2 as adoption accelerates globally.",
+        content: "Global electric vehicle sales reached a new milestone in the second quarter, with 3.5 million units sold - a 45% increase from the same period last year. China led the way with 55% growth, followed by Europe at 40% and the United States at 35%. Tesla maintained its leadership position, delivering a record 466,000 vehicles. However, BYD and other Chinese automakers are rapidly closing the gap. 'The EV transition is accelerating faster than expected,' said industry analyst James Carter. 'We're seeing strong demand across all price segments.' Battery manufacturers and lithium producers also benefited from the surge.",
+        source: "Reuters",
         datetime: new Date().toISOString(),
-        url: '#',
-        category: 'Institutional Flow',
-        sentiment: 'positive',
-        stockImpact: 'BANKING, FINANCIALS'
+        url: "#",
+        category: "Auto Sector",
+        sentiment: "positive",
+        stockImpact: "TSLA, BYD, TATA MOTORS",
+        imageUrl: "/api/placeholder/800/400",
+        author: "David Kim",
+        readTime: 3,
+        relatedStocks: ["TSLA", "TATAMOTORS", "MARUTI"]
       }
     ];
     
     setNews(fallbackNews);
-    
-    // Set categories from fallback
     const uniqueCategories = ['all', ...new Set(fallbackNews.map(n => n.category))];
     setCategories(uniqueCategories);
-    
-    // Calculate sentiment
     const positive = fallbackNews.filter(n => n.sentiment === 'positive').length;
     const negative = fallbackNews.filter(n => n.sentiment === 'negative').length;
     setPositiveNews(positive);
     setNegativeNews(negative);
     setMarketSentiment(positive > negative ? 'Bullish' : negative > positive ? 'Bearish' : 'Neutral');
-    
     setLastUpdated(new Date());
   };
 
-  // Initial fetch
   useEffect(() => {
     fetchNews();
-    
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(() => {
-      fetchNews(true);
-    }, 5 * 60 * 1000);
-    
+    const interval = setInterval(() => fetchNews(true), 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Filter news by category
   const filteredNews = selectedCategory === 'all' 
     ? news 
     : news.filter(n => n?.category === selectedCategory);
@@ -183,10 +200,8 @@ export default function NewsPage() {
   const featuredNews = filteredNews[0];
   const remainingNews = filteredNews.slice(1);
 
-  // Format date
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Just now';
-    
     try {
       const date = new Date(dateString);
       const now = new Date();
@@ -198,12 +213,9 @@ export default function NewsPage() {
       if (diffMinutes < 60) return `${diffMinutes} min ago`;
       if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    } catch (error) {
-      return 'Just now';
-    }
+    } catch { return 'Just now'; }
   };
 
-  // Get sentiment color
   const getSentimentColor = (sentiment: string) => {
     switch(sentiment) {
       case 'positive': return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
@@ -212,7 +224,6 @@ export default function NewsPage() {
     }
   };
 
-  // Get sentiment icon
   const getSentimentIcon = (sentiment: string) => {
     switch(sentiment) {
       case 'positive': return <TrendingUp className="w-3 h-3" />;
@@ -221,8 +232,191 @@ export default function NewsPage() {
     }
   };
 
+  const openModal = (article: NewsArticle) => {
+    setSelectedArticle(article);
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setIsFullscreen(false);
+    document.body.style.overflow = 'auto';
+    setTimeout(() => setSelectedArticle(null), 300);
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  // Modal Component
+  const NewsModal = () => {
+    if (!selectedArticle) return null;
+
+    return (
+      <div 
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-all duration-300 ${
+          isModalOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={closeModal}
+      >
+        <div 
+          className={`bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${
+            isFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-4xl max-h-[90vh]'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Modal Header */}
+          <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Newspaper className="w-5 h-5 text-blue-600" />
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Full Story</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+              >
+                {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Content */}
+          <div className="overflow-y-auto max-h-[calc(90vh-70px)]">
+            {/* Featured Image */}
+            {selectedArticle.imageUrl && (
+              <div className="relative h-64 md:h-96 bg-gray-100 dark:bg-gray-800">
+                <img
+                  src={selectedArticle.imageUrl}
+                  alt={selectedArticle.headline}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="absolute bottom-4 left-6">
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getSentimentColor(selectedArticle.sentiment)}`}>
+                    {getSentimentIcon(selectedArticle.sentiment)}
+                    {selectedArticle.category}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="p-6 md:p-8">
+              {/* Title */}
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+                {selectedArticle.headline}
+              </h1>
+
+              {/* Meta Info */}
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-6 pb-6 border-b border-gray-200 dark:border-gray-800">
+                <span className="flex items-center gap-1">
+                  <Globe className="w-4 h-4" />
+                  {selectedArticle.source}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {formatDate(selectedArticle.datetime)}
+                </span>
+                {selectedArticle.author && (
+                  <span className="flex items-center gap-1">
+                    <User className="w-4 h-4" />
+                    {selectedArticle.author}
+                  </span>
+                )}
+                {selectedArticle.readTime && (
+                  <span className="flex items-center gap-1">
+                    <Bookmark className="w-4 h-4" />
+                    {selectedArticle.readTime} min read
+                  </span>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="prose prose-lg dark:prose-invert max-w-none">
+                <p className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  {selectedArticle.summary}
+                </p>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
+                  {selectedArticle.content || selectedArticle.summary}
+                </p>
+              </div>
+
+              {/* Stock Impact */}
+              {selectedArticle.stockImpact && selectedArticle.stockImpact !== 'Market' && (
+                <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Stocks Impacted</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedArticle.stockImpact.split(',').map(stock => (
+                      <Link
+                        key={stock.trim()}
+                        href={`/stocks/${stock.trim()}`}
+                        className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-sm font-medium text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                      >
+                        {stock.trim()}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Related Stocks */}
+              {selectedArticle.relatedStocks && selectedArticle.relatedStocks.length > 0 && (
+                <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Related Stocks</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedArticle.relatedStocks.map(stock => (
+                      <Link
+                        key={stock}
+                        href={`/stocks/${stock}`}
+                        className="px-3 py-1 bg-white dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white transition"
+                      >
+                        {stock}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="mt-8 flex flex-wrap gap-4 pt-6 border-t border-gray-200 dark:border-gray-800">
+                <Link
+                  href={selectedArticle.url}
+                  target="_blank"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition"
+                >
+                  Read Original Article
+                  <ExternalLink className="w-4 h-4" />
+                </Link>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success('Link copied to clipboard!');
+                  }}
+                  className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium rounded-xl transition"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share Article
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#eff6ff,_#f8fafc_45%,_#eef2ff)] dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800">
       {/* Notification Toast */}
       {showNotification && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in">
@@ -236,23 +430,26 @@ export default function NewsPage() {
         </div>
       )}
 
+      {/* Modal */}
+      <NewsModal />
+
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         
-        {/* Header with Live Indicator */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {/* Header */}
+        <div className="mb-8 rounded-3xl border border-blue-100/80 dark:border-gray-700 bg-white/80 dark:bg-gray-800/70 backdrop-blur-md p-6 md:p-8 shadow-xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full mb-4 relative">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100/90 dark:bg-green-900/30 rounded-full mb-4 border border-green-200 dark:border-green-800">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-sm text-green-600 dark:text-green-400 font-medium">LIVE REAL-TIME NEWS</span>
                 <span className="text-xs text-gray-500 ml-2">
                   Updated: {formatTimeString(lastUpdated)}
                 </span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-700 via-cyan-600 to-indigo-700 bg-clip-text text-transparent tracking-tight">
                 Stock Market News
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
+              <p className="text-gray-600 dark:text-gray-400 mt-2 font-medium">
                 {isClient ? new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Loading...'}
               </p>
             </div>
@@ -260,7 +457,7 @@ export default function NewsPage() {
             <button
               onClick={() => fetchNews(true)}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:-translate-y-0.5 transition-all disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span className="text-sm font-medium">Refresh Now</span>
@@ -277,15 +474,16 @@ export default function NewsPage() {
         )}
 
         {/* Market Sentiment Bar */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg p-4 mb-8 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 mb-8 border border-gray-200 dark:border-gray-700">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className={`px-3 py-1.5 rounded-full flex items-center gap-1 text-sm font-medium ${getSentimentColor(marketSentiment === 'Bullish' ? 'positive' : marketSentiment === 'Bearish' ? 'negative' : 'neutral')}`}>
+              <div className={`px-3 py-1.5 rounded-full flex items-center gap-1 text-sm font-semibold ${getSentimentColor(marketSentiment === 'Bullish' ? 'positive' : marketSentiment === 'Bearish' ? 'negative' : 'neutral')}`}>
                 {marketSentiment === 'Bullish' ? <TrendingUp className="w-4 h-4" /> : marketSentiment === 'Bearish' ? <TrendingDown className="w-4 h-4" /> : <BarChart3 className="w-4 h-4" />}
                 Market Sentiment: {marketSentiment}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {positiveNews} Positive | {negativeNews} Negative
+              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                <span className="px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">{positiveNews} Positive</span>
+                <span className="px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-medium">{negativeNews} Negative</span>
               </div>
             </div>
             <div className="flex items-center gap-4 text-sm">
@@ -299,15 +497,15 @@ export default function NewsPage() {
 
         {/* Category Filters */}
         {categories.length > 1 && (
-          <div className="flex flex-wrap gap-2 mb-8">
+          <div className="flex flex-wrap gap-2 mb-8 bg-white/70 dark:bg-gray-800/60 p-2 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
             {categories.map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   selectedCategory === cat
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                    : 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-700'
                 }`}
               >
                 {cat === 'all' ? 'All News' : cat}
@@ -329,7 +527,7 @@ export default function NewsPage() {
             {/* Featured News */}
             {featuredNews && (
               <div className="mb-12">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all hover:-translate-y-1">
                   <div className="grid md:grid-cols-2 gap-0">
                     <div className="p-8">
                       <div className="flex items-center gap-2 mb-4">
@@ -337,7 +535,7 @@ export default function NewsPage() {
                           {getSentimentIcon(featuredNews.sentiment || 'neutral')}
                           {featuredNews.category || 'News'}
                         </span>
-                        <span className="text-xs text-gray-500">Latest</span>
+                        <span className="text-xs text-gray-500">Featured</span>
                       </div>
                       <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
                         {featuredNews.headline || 'Market Update'}
@@ -361,17 +559,16 @@ export default function NewsPage() {
                           </span>
                         )}
                       </div>
-                      <Link
-                        href={featuredNews.url || '#'}
-                        target="_blank"
-                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium group"
+                      <button
+                        onClick={() => openModal(featuredNews)}
+                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium group cursor-pointer"
                       >
                         Read Full Story
                         <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </Link>
+                      </button>
                     </div>
-                    <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-8 text-white">
-                      <StockUp className="w-12 h-12 mb-4 opacity-80" />
+                    <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-8 text-white">
+                      <Sparkles className="w-12 h-12 mb-4 opacity-80" />
                       <p className="text-xl font-semibold mb-4">Today's Market Highlights</p>
                       <div className="space-y-3">
                         <div>
@@ -394,44 +591,64 @@ export default function NewsPage() {
 
             {/* News Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {remainingNews.map((article: any, index: number) => (
+              {remainingNews.map((article: NewsArticle, index: number) => (
                 <article
                   key={index}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700 group"
+                  className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700 group cursor-pointer hover:-translate-y-1"
+                  onClick={() => openModal(article)}
                 >
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getSentimentColor(article?.sentiment || 'neutral')}`}>
-                        {getSentimentIcon(article?.sentiment || 'neutral')}
-                        {article?.category || 'News'}
-                      </span>
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatDate(article?.datetime)}
-                      </span>
+                  {article.imageUrl && (
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={article.imageUrl}
+                        alt={article.headline}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute top-3 left-3">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getSentimentColor(article.sentiment || 'neutral')}`}>
+                          {getSentimentIcon(article.sentiment || 'neutral')}
+                          {article.category || 'News'}
+                        </span>
+                      </div>
                     </div>
+                  )}
+                  <div className="p-6">
+                    {!article.imageUrl && (
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getSentimentColor(article.sentiment || 'neutral')}`}>
+                          {getSentimentIcon(article.sentiment || 'neutral')}
+                          {article.category || 'News'}
+                        </span>
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatDate(article.datetime)}
+                        </span>
+                      </div>
+                    )}
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 transition">
-                      {article?.headline || 'Market Update'}
+                      {article.headline || 'Market Update'}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-3">
-                      {article?.summary || 'Read the latest market news and analysis.'}
+                      {article.summary || 'Read the latest market news and analysis.'}
                     </p>
-                    {article?.stockImpact && article.stockImpact !== 'Market' && (
+                    {article.stockImpact && article.stockImpact !== 'Market' && (
                       <div className="flex items-center gap-1 text-xs text-blue-600 mb-3">
                         <DollarSign className="w-3 h-3" />
                         <span>Affects: {article.stockImpact}</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                      <span className="text-xs text-gray-500">{article?.source || 'Market News'}</span>
-                      <Link
-                        href={article?.url || '#'}
-                        target="_blank"
+                      <span className="text-xs text-gray-500">{article.source || 'Market News'}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openModal(article);
+                        }}
                         className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
                       >
                         Read more
                         <ChevronRight className="w-4 h-4" />
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 </article>

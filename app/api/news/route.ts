@@ -1,99 +1,161 @@
 import { NextResponse } from 'next/server';
 
+const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
+const API_KEY = process.env.FINNHUB_API_KEY || process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
+
+type RawNews = {
+  id?: number;
+  headline?: string;
+  summary?: string;
+  source?: string;
+  datetime?: number;
+  url?: string;
+  category?: string;
+  image?: string;
+};
+
+const STOCK_KEYWORDS = [
+  'stock',
+  'stocks',
+  'share',
+  'shares',
+  'equity',
+  'equities',
+  'market',
+  'markets',
+  'wall street',
+  'dow',
+  'nasdaq',
+  's&p',
+  'earnings',
+  'revenue',
+  'guidance',
+  'ipo',
+  'analyst',
+  'bullish',
+  'bearish',
+  'dividend',
+  'buyback',
+  'valuation',
+  'jpmorgan',
+  'goldman',
+  'morgan stanley',
+];
+
+const NON_STOCK_KEYWORDS = [
+  'crypto',
+  'bitcoin',
+  'ethereum',
+  'forex',
+  'eurusd',
+  'usd/jpy',
+  'commodity only',
+];
+
+function isStockRelated(article: RawNews): boolean {
+  const text = `${article.headline || ''} ${article.summary || ''} ${article.category || ''}`.toLowerCase();
+  const hasStockSignal = STOCK_KEYWORDS.some((keyword) => text.includes(keyword));
+  const hasNonStockSignal = NON_STOCK_KEYWORDS.some((keyword) => text.includes(keyword));
+  return hasStockSignal && !hasNonStockSignal;
+}
+
+function inferSentiment(text: string): 'positive' | 'negative' | 'neutral' {
+  const value = text.toLowerCase();
+  const positiveWords = ['surge', 'gain', 'up', 'beat', 'bullish', 'rally', 'strong'];
+  const negativeWords = ['fall', 'down', 'drop', 'miss', 'bearish', 'weak', 'decline'];
+
+  const hasPositive = positiveWords.some((word) => value.includes(word));
+  const hasNegative = negativeWords.some((word) => value.includes(word));
+
+  if (hasPositive && !hasNegative) return 'positive';
+  if (hasNegative && !hasPositive) return 'negative';
+  return 'neutral';
+}
+
+function mapArticle(article: RawNews, index: number) {
+  const headline = article.headline || 'Market Update';
+  const summary = article.summary || 'Latest market update';
+  const category = article.category || 'General';
+  const datetimeIso = article.datetime ? new Date(article.datetime * 1000).toISOString() : new Date().toISOString();
+
+  return {
+    id: String(article.id || `${Date.now()}-${index}`),
+    headline,
+    summary,
+    content: summary,
+    source: article.source || 'Market News',
+    datetime: datetimeIso,
+    url: article.url || '#',
+    category,
+    sentiment: inferSentiment(`${headline} ${summary}`),
+    stockImpact: 'Market',
+    imageUrl: article.image || '',
+    author: article.source || 'Market Desk',
+    readTime: 2,
+    relatedStocks: [],
+  };
+}
+
+function getFallbackNews() {
+  return [
+    {
+      id: 'fallback-1',
+      headline: 'Live market feed unavailable',
+      summary: 'Please add FINNHUB_API_KEY in .env to enable live daily news feed.',
+      content: 'Please add FINNHUB_API_KEY in .env to enable live daily news feed.',
+      source: 'System',
+      datetime: new Date().toISOString(),
+      url: '#',
+      category: 'System',
+      sentiment: 'neutral' as const,
+      stockImpact: 'Market',
+      imageUrl: '',
+      author: 'Signalist',
+      readTime: 1,
+      relatedStocks: [],
+    },
+  ];
+}
+
 export async function GET() {
   try {
-    // Return sample news data directly
-    const sampleNews = getTodayMarketNews();
-    
-    return NextResponse.json(sampleNews, {
+    if (!API_KEY) {
+      return NextResponse.json(getFallbackNews(), {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    const response = await fetch(`${FINNHUB_BASE_URL}/news?category=general&token=${API_KEY}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Finnhub news request failed with status ${response.status}`);
+    }
+
+    const rawData = (await response.json()) as RawNews[];
+    const sourceList = Array.isArray(rawData) ? rawData : [];
+    const filteredStockNews = sourceList.filter(isStockRelated);
+    const list = (filteredStockNews.length > 0 ? filteredStockNews : sourceList).slice(0, 30);
+    const mapped = list.map((article, index) => mapArticle(article, index));
+
+    return NextResponse.json(mapped, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Content-Type': 'application/json',
       },
     });
   } catch (error) {
-    console.error('Error in API:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch news' },
-      { status: 500 }
-    );
-  }
-}
+    console.error('Error fetching live news:', error);
 
-function getTodayMarketNews() {
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const currentHour = today.getHours();
-  
-  let marketStatus = 'Opening';
-  if (currentHour >= 9 && currentHour < 15) {
-    marketStatus = 'Live Trading';
-  } else if (currentHour >= 15 && currentHour < 18) {
-    marketStatus = 'Closing';
-  } else {
-    marketStatus = 'Market Update';
+    return NextResponse.json(getFallbackNews(), {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Content-Type': 'application/json',
+      },
+    });
   }
-  
-  return [
-    {
-      headline: `${dateStr}: Nifty, Sensex ${marketStatus} - Key Market Highlights`,
-      summary: `${marketStatus === 'Live Trading' ? 'Markets are trading with positive momentum' : marketStatus === 'Closing' ? 'Markets closed with gains' : 'Pre-market indicators show positive opening'} on ${dateStr} tracking global cues.`,
-      source: 'Live Market Desk',
-      datetime: new Date().toISOString(),
-      url: '#',
-      category: 'Market Update',
-      sentiment: 'positive',
-      stockImpact: 'NIFTY 50, SENSEX'
-    },
-    {
-      headline: `${dateStr}: Top Gainers and Losers - Real-time Data`,
-      summary: `Reliance gains 2% on deal buzz, IT stocks show strength, while banking stocks remain volatile. Check complete list.`,
-      source: 'Market Update',
-      datetime: new Date().toISOString(),
-      url: '#',
-      category: 'Market Movers',
-      sentiment: 'neutral',
-      stockImpact: 'RELIANCE, INFY, TCS, HDFC'
-    },
-    {
-      headline: `FII/DII Activity: Latest Institutional Flow Data - ${dateStr}`,
-      summary: `Foreign Institutional Investors net bought ₹1,850 crore, Domestic Institutions net sold ₹620 crore today.`,
-      source: 'Institutional Tracker',
-      datetime: new Date().toISOString(),
-      url: '#',
-      category: 'Institutional Flow',
-      sentiment: 'positive',
-      stockImpact: 'BANKING, FINANCIALS'
-    },
-    {
-      headline: `Global Markets Update: Asian Shares Mixed, US Futures Flat`,
-      summary: `Nikkei up 0.5%, Hang Seng down 0.3%. Investors await key US inflation data later this week.`,
-      source: 'Global Desk',
-      datetime: new Date().toISOString(),
-      url: '#',
-      category: 'Global Markets',
-      sentiment: 'neutral',
-      stockImpact: 'IT, AUTO, EXPORT'
-    },
-    {
-      headline: `Currency Market: Rupee vs Dollar Live Rate - ${dateStr}`,
-      summary: `Indian rupee trades at 83.45 against US dollar, stable on RBI intervention and FII inflows.`,
-      source: 'Currency Desk',
-      datetime: new Date().toISOString(),
-      url: '#',
-      category: 'Currency',
-      sentiment: 'neutral',
-      stockImpact: 'IT, PHARMA, EXPORT'
-    },
-    {
-      headline: `Commodity Market: Gold, Silver, Crude Oil Prices Today`,
-      summary: `Gold holds above ₹72,000, silver stable at ₹85,000. Crude oil trades at $84/barrel.`,
-      source: 'Commodity Desk',
-      datetime: new Date().toISOString(),
-      url: '#',
-      category: 'Commodities',
-      sentiment: 'neutral',
-      stockImpact: 'GOLD, OIL, METALS'
-    }
-  ];
 }

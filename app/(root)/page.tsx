@@ -8,7 +8,7 @@ import {
 import { connectToDatabase } from '@/database/mongoose';
 import Link from 'next/link';
 import { ArrowRight, TrendingUp } from 'lucide-react';
-import React from 'react'; // ✅ Add React import
+import React from 'react';
 
 // Type for suggestions
 interface SuggestionType {
@@ -32,6 +32,7 @@ const Home = async () => {
     try {
         await connectToDatabase();
         
+        // Fix: Import the correct model name
         const ExpertSuggestionModule = await import('@/database/models/expert.model').catch(() => null);
         const ExpertSuggestion = ExpertSuggestionModule?.default;
         
@@ -51,7 +52,7 @@ const Home = async () => {
         console.error('Error fetching suggestions:', error);
     }
 
-    // ✅ Fix Line 48 - Use lowercase for variable, capitalize for component
+    // Fix: Import ExpertSuggestionCard component
     let SuggestionCardComponent = null;
     try {
         const module = await import('@/components/ui/ExpertSuggestionCard').catch(() => null);
@@ -102,7 +103,6 @@ const Home = async () => {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {topSuggestions.map((suggestion: SuggestionType) => {
-                            // ✅ Fix: Create a capitalized variable inside the map
                             const Card = SuggestionCardComponent;
                             return (
                                 <Card 

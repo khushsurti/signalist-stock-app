@@ -220,26 +220,75 @@ function getMockStockData(symbol: string) {
 // ============================================
 // SEARCH STOCKS
 // ============================================
-export const searchStocks = cache(async (query?: string): Promise<any[]> => {
-  const popularStocks = [
-    { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ', type: 'Stock' },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', exchange: 'NASDAQ', type: 'Stock' },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ', type: 'Stock' },
-    { symbol: 'AMZN', name: 'Amazon.com Inc.', exchange: 'NASDAQ', type: 'Stock' },
-    { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ', type: 'Stock' },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', exchange: 'NASDAQ', type: 'Stock' },
-    { symbol: 'META', name: 'Meta Platforms Inc.', exchange: 'NASDAQ', type: 'Stock' },
-    { symbol: 'NFLX', name: 'Netflix Inc.', exchange: 'NASDAQ', type: 'Stock' },
-  ];
+const POPULAR_STOCKS = [
+  { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'MSFT', name: 'Microsoft Corp.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'NVDA', name: 'NVIDIA Corp.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'META', name: 'Meta Platforms Inc.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'NFLX', name: 'Netflix Inc.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'AVGO', name: 'Broadcom Inc.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'BRK.B', name: 'Berkshire Hathaway Inc. Class B', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'V', name: 'Visa Inc.', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'MA', name: 'Mastercard Inc.', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'JPM', name: 'JPMorgan Chase & Co.', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'BAC', name: 'Bank of America Corp.', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'GS', name: 'Goldman Sachs Group Inc.', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'WFC', name: 'Wells Fargo & Co.', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'C', name: 'Citigroup Inc.', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'HSBC', name: 'HSBC Holdings plc', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'JNJ', name: 'Johnson & Johnson', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'LLY', name: 'Eli Lilly and Company', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'WMT', name: 'Walmart Inc.', exchange: 'NYSE', type: 'Stock' },
+  { symbol: 'COST', name: 'Costco Wholesale Corp.', exchange: 'NASDAQ', type: 'Stock' },
+  { symbol: 'XOM', name: 'Exxon Mobil Corp.', exchange: 'NYSE', type: 'Stock' },
+];
 
-  if (!query) {
-    return popularStocks.map(s => ({ ...s, isInWatchlist: false }));
+export async function searchStocks(query?: string): Promise<any[]> {
+  const normalizedQuery = query?.trim();
+
+  if (!normalizedQuery) {
+    return POPULAR_STOCKS.map((stock) => ({ ...stock, isInWatchlist: false }));
   }
 
-  const filtered = popularStocks.filter(s => 
-    s.symbol.toLowerCase().includes(query.toLowerCase()) ||
-    s.name.toLowerCase().includes(query.toLowerCase())
-  );
+  try {
+    if (API_KEY) {
+      const response = await fetch(
+        `${FINNHUB_BASE_URL}/search?q=${encodeURIComponent(normalizedQuery)}&token=${API_KEY}`,
+        { next: { revalidate: 900 } }
+      );
 
-  return filtered.map(s => ({ ...s, isInWatchlist: false }));
-});
+      if (response.ok) {
+        const data = await response.json();
+        const results = Array.isArray(data?.result) ? data.result : [];
+
+        const mappedResults = results
+          .filter((item: any) => item?.symbol && item?.description)
+          .slice(0, 20)
+          .map((item: any) => ({
+            symbol: item.symbol,
+            name: item.description,
+            exchange: item.primaryExchange || item.mic || 'US',
+            type: item.type || 'Stock',
+            isInWatchlist: false,
+          }));
+
+        if (mappedResults.length > 0) {
+          return mappedResults;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error searching stocks:', error);
+  }
+
+  return POPULAR_STOCKS
+    .filter(
+      (stock) =>
+        stock.symbol.toLowerCase().includes(normalizedQuery.toLowerCase()) ||
+        stock.name.toLowerCase().includes(normalizedQuery.toLowerCase())
+    )
+    .map((stock) => ({ ...stock, isInWatchlist: false }));
+}

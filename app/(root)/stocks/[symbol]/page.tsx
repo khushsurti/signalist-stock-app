@@ -7,6 +7,7 @@ import { getUserWatchlist } from '@/lib/actions/watchlist.actions';
 import { getWallet } from '@/lib/actions/wallet.actions';
 import { auth } from '@/lib/better-auth/auth';
 import { headers } from 'next/headers';
+import PriceAlert from '@/components/ui/PriceAlert';
 import { connectToDatabase } from '@/database/mongoose';
 import ExpertSuggestion from '@/database/models/expert.model';
 import ExpertSuggestionCard from '@/components/ui/ExpertSuggestionCard';
@@ -17,6 +18,10 @@ import {
   TECHNICAL_ANALYSIS_WIDGET_CONFIG,
   COMPANY_PROFILE_WIDGET_CONFIG,
   COMPANY_FINANCIALS_WIDGET_CONFIG,
+  MARKET_OVERVIEW_WIDGET_CONFIG,
+  HEATMAP_WIDGET_CONFIG,
+  TOP_STORIES_WIDGET_CONFIG,
+  MARKET_DATA_WIDGET_CONFIG,
 } from '@/lib/constants';
 import { notFound } from 'next/navigation';
 
@@ -77,31 +82,28 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
     (item: any) => item.symbol === symbol.toUpperCase()
   );
 
- // Expert suggestions fetch करने का सही तरीका
-let stockSuggestions: any[] = [];
-try {
-  await connectToDatabase();
-  
-  // ✅ बस इतना लिखो - कोई type casting नहीं
-  const suggestions = await ExpertSuggestion.find({
-    stockSymbol: symbol.toUpperCase(),
-    isActive: true,
-    expiresAt: { $gt: new Date() }
-  })
-    .sort({ confidenceScore: -1, createdAt: -1 })
-    .limit(3)
-    .lean();
-  
-  // अगर suggestions मिले तो assign करो, नहीं तो empty array
-  stockSuggestions = suggestions || [];
-  
-} catch (error) {
-  console.error('Error fetching stock suggestions:', error);
-  // error आने पर empty array रहेगा
-}
+  // Expert suggestions fetch
+  let stockSuggestions: any[] = [];
+  try {
+    await connectToDatabase();
+    
+    const suggestions = await ExpertSuggestion.find({
+      stockSymbol: symbol.toUpperCase(),
+      isActive: true,
+      expiresAt: { $gt: new Date() }
+    })
+      .sort({ confidenceScore: -1, createdAt: -1 })
+      .limit(3)
+      .lean();
+    
+    stockSuggestions = suggestions || [];
+    
+  } catch (error) {
+    console.error('Error fetching stock suggestions:', error);
+  }
 
   return (
-    <div className='flex min-h-screen p-4 md:p-6 lg:p-8'>
+    <div className='flex flex-col min-h-screen p-4 md:p-6 lg:p-8'>
       <section className='grid grid-cols-1 md:grid-cols-2 gap-8 w-full'>
         
         {/* Left column - Charts */}
@@ -164,6 +166,17 @@ try {
             </div>
           </div>
 
+          {/* Price Alert Component */}
+          {session?.user && (
+            <div className='mt-2'>
+              <PriceAlert
+                symbol={symbol.toUpperCase()}
+                company={safeStockData.company}
+                currentPrice={safeStockData.currentPrice}
+              />
+            </div>
+          )}
+
           {/* Buy/Sell Buttons */}
           {session?.user && (
             <BuySellButtons
@@ -209,6 +222,43 @@ try {
             scriptUrl={`${scriptUrl}financials.js`}
             config={COMPANY_FINANCIALS_WIDGET_CONFIG(symbol)}
             height={464}
+          />
+        </div>
+      </section>
+
+      <section className='grid grid-cols-1 xl:grid-cols-3 w-full gap-8 mt-8'>
+        <div className='md:col-span-1 xl:col-span-1'>
+          <TradingViewWidget
+            title='Market Overview'
+            scriptUrl={`${scriptUrl}market-overview.js`}
+            config={MARKET_OVERVIEW_WIDGET_CONFIG}
+            className='custom-chart'
+            height={600}
+          />
+        </div>
+        <div className='md:col-span-1 xl:col-span-2'>
+          <TradingViewWidget
+            title='Stock Heatmap'
+            scriptUrl={`${scriptUrl}stock-heatmap.js`}
+            config={HEATMAP_WIDGET_CONFIG}
+            height={600}
+          />
+        </div>
+      </section>
+
+      <section className='grid grid-cols-1 xl:grid-cols-3 w-full gap-8 mt-8'>
+        <div className='h-full md:col-span-1 xl:col-span-1'>
+          <TradingViewWidget
+            scriptUrl={`${scriptUrl}timeline.js`}
+            config={TOP_STORIES_WIDGET_CONFIG}
+            height={600}
+          />
+        </div>
+        <div className='h-full md:col-span-1 xl:col-span-2'>
+          <TradingViewWidget
+            scriptUrl={`${scriptUrl}market-quotes.js`}
+            config={MARKET_DATA_WIDGET_CONFIG}
+            height={600}
           />
         </div>
       </section>
