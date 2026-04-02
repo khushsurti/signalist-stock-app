@@ -21,7 +21,7 @@ function getSampleStocks() {
       symbol: 'AAPL',
       name: 'Apple Inc.',
       exchange: 'NASDAQ',
-      priceFormatted: '$175.34',
+      priceFormatted: '₹175.34',
       changePercent: 2.5,
       changeFormatted: '+2.5%'
     },
@@ -29,7 +29,7 @@ function getSampleStocks() {
       symbol: 'MSFT',
       name: 'Microsoft Corporation',
       exchange: 'NASDAQ',
-      priceFormatted: '$330.21',
+      priceFormatted: '₹330.21',
       changePercent: -0.5,
       changeFormatted: '-0.5%'
     },
@@ -37,7 +37,7 @@ function getSampleStocks() {
       symbol: 'GOOGL',
       name: 'Alphabet Inc.',
       exchange: 'NASDAQ',
-      priceFormatted: '$142.80',
+      priceFormatted: '₹142.80',
       changePercent: 0.8,
       changeFormatted: '+0.8%'
     },
@@ -45,7 +45,7 @@ function getSampleStocks() {
       symbol: 'AMZN',
       name: 'Amazon.com Inc.',
       exchange: 'NASDAQ',
-      priceFormatted: '$178.50',
+      priceFormatted: '₹178.50',
       changePercent: -1.1,
       changeFormatted: '-1.1%'
     },
@@ -53,7 +53,7 @@ function getSampleStocks() {
       symbol: 'TSLA',
       name: 'Tesla Inc.',
       exchange: 'NASDAQ',
-      priceFormatted: '$240.15',
+      priceFormatted: '₹240.15',
       changePercent: 1.2,
       changeFormatted: '+1.2%'
     }

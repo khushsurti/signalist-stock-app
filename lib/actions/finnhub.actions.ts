@@ -139,9 +139,9 @@ export const getStocksDetails = cache(async (symbol: string) => {
     const changePercent = quote.dp || 0;
     
     const formatPrice = (price: number) => {
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('en-IN', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'INR',
         minimumFractionDigits: 2,
       }).format(price);
     };
@@ -193,9 +193,9 @@ function getMockStockData(symbol: string) {
   const changePercent = (Math.random() * 10 - 5);
   
   const formatPrice = (p: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2,
     }).format(p);
   };

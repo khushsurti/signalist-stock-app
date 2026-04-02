@@ -120,7 +120,7 @@ export default async function TransactionsPage() {
                           <div className={`font-bold text-lg ${
                             tx.type === 'BUY' ? 'text-red-600' : 'text-green-600'
                           }`}>
-                            {tx.type === 'BUY' ? '-' : '+'}${tx.total.toFixed(2)}
+                            {tx.type === 'BUY' ? '-' : '+'}₹{tx.total.toFixed(2)}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-500">
                             {new Date(tx.createdAt).toLocaleTimeString('en-US', {
@@ -134,7 +134,7 @@ export default async function TransactionsPage() {
 
                       {/* Additional details (optional) */}
                       <div className="mt-2 grid grid-cols-3 gap-4 text-xs text-gray-500 dark:text-gray-500 ml-16">
-                        <div>Price per share: ${tx.price.toFixed(2)}</div>
+                        <div>Price per share: ₹{tx.price.toFixed(2)}</div>
                         <div>Total shares: {tx.quantity}</div>
                         <div>Order type: Market</div>
                       </div>

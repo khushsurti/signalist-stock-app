@@ -25,14 +25,14 @@ export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Formatted string like "$3.10T", "$900.00B", "$25.00M" or "$999,999.99"
+// Formatted string like "₹3.10T", "₹900.00B", "₹25.00M" or "₹999,999.99"
 export function formatMarketCapValue(marketCapUsd: number): string {
   if (!Number.isFinite(marketCapUsd) || marketCapUsd <= 0) return 'N/A';
 
-  if (marketCapUsd >= 1e12) return `$${(marketCapUsd / 1e12).toFixed(2)}T`; // Trillions
-  if (marketCapUsd >= 1e9) return `$${(marketCapUsd / 1e9).toFixed(2)}B`; // Billions
-  if (marketCapUsd >= 1e6) return `$${(marketCapUsd / 1e6).toFixed(2)}M`; // Millions
-  return `$${marketCapUsd.toFixed(2)}`; // Below one million, show full USD amount
+  if (marketCapUsd >= 1e12) return `₹${(marketCapUsd / 1e12).toFixed(2)}T`; // Trillions
+  if (marketCapUsd >= 1e9) return `₹${(marketCapUsd / 1e9).toFixed(2)}B`; // Billions
+  if (marketCapUsd >= 1e6) return `₹${(marketCapUsd / 1e6).toFixed(2)}M`; // Millions
+  return `₹${marketCapUsd.toFixed(2)}`; // Below one million, show full amount
 }
 
 export const getDateRange = (days: number) => {
@@ -109,9 +109,9 @@ export const getChangeColorClass = (changePercent?: number) => {
 };
 
 export const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     minimumFractionDigits: 2,
   }).format(price);
 };
